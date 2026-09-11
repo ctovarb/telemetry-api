@@ -49,6 +49,10 @@ jobs:
     name: Deploy to AWS Serverless
     needs: [test, security-scan] # Se ejecuta SOLO si test y security-scan terminan en verde
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write # Necesario para hacer commit del estado de Terraform de vuelta al repositorio
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -101,4 +105,5 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add infrastructure/terraform.tfstate || true
           git commit -m "chore: update terraform state automatically [skip ci]" || echo "No changes to state"
-          git push
+          git push origin main
+        working-directory: ./infrastructure

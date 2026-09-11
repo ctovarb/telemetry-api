@@ -22,6 +22,7 @@ WORKDIR /app
 COPY --from=builder /app/main .
 
 ENV PORT=8080
+ENV AWS_LWA_READINESS_CHECK_PATH="/health"
 EXPOSE 8080
 
 CMD ["./main"]

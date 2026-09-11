@@ -16,6 +16,10 @@ jobs:
   infrastructure-operation:
     name: Run Terraform ${{ inputs.action }}
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write # Necesario para hacer commit del estado de Terraform de vuelta al repositorio
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
