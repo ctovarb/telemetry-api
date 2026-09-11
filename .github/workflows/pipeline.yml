@@ -94,3 +94,11 @@ jobs:
           IMAGE_URI: ${{ steps.build-image.outputs.image_uri }}
         run: terraform apply -auto-approve -var="image_uri=$IMAGE_URI"
         working-directory: ./infrastructure
+
+      - name: Commit back Terraform State to Repo
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add infrastructure/terraform.tfstate || true
+          git commit -m "chore: update terraform state automatically [skip ci]" || echo "No changes to state"
+          git push
