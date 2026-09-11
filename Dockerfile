@@ -2,7 +2,7 @@
 FROM public.ecr.aws/awsguru/aws-lambda-adapter:0.8.4 AS adapter
 
 # Etapa 1: Construccion
-FROM golang:1.21-alpine AS builder
+FROM golang:1.26.6-alpine AS builder
 WORKDIR /app
 COPY src/ .
 
