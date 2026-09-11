@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Token con permisos para hacer commit del estado actualizado
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -34,18 +36,30 @@ jobs:
         run: terraform init
         working-directory: ./infrastructure
 
-      # Operación de Importación manual (Ideal para sincronizar recursos huérfanos)
+      # --- OPERACIÓN DE IMPORTACIÓN ---
       - name: Execute Terraform Import
         if: ${{ github.event.inputs.action == 'import' }}
         run: |
-          echo "Intentando importar el repositorio ECR existente..."
-          terraform import aws_ecr_repository.api_repo telemetry-api || echo "El recurso ya estaba importado o no existe en AWS."
+          echo "Sincronizando recursos existentes al estado local..."
+          # Importamos ECR y el Rol de IAM para que Terraform los reconozca
+          terraform import aws_ecr_repository.api_repo telemetry-api || true
+          terraform import aws_iam_role.lambda_exec_role telemetry_lambda_role || true
         working-directory: ./infrastructure
 
-      # Operación de Destrucción total (Limpieza de la prueba)
+      # --- OPERACIÓN DE DESTRUCCIÓN ---
       - name: Execute Terraform Destroy
         if: ${{ github.event.inputs.action == 'destroy' }}
         run: |
-          echo "¡Atención! Destruyendo toda la infraestructura en AWS..."
+          echo "¡Destruyendo toda la infraestructura en AWS..."
           terraform destroy -auto-approve
+        working-directory: ./infrastructure
+
+      # Guardar los cambios del archivo .tfstate de vuelta en el repositorio
+      - name: Commit State Changes Back to Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add infrastructure/terraform.tfstate || true
+          git commit -m "chore: update terraform state after ${{ inputs.action }} [skip ci]" || echo "No state changes to commit"
+          git push || echo "No changes to push"
         working-directory: ./infrastructure
