@@ -49,3 +49,12 @@ resource "aws_lambda_function_url" "api_url" {
   function_name = aws_lambda_function.api_lambda.function_name
   authorization_type = "NONE"
 }
+
+# Permiso para invocar la función Lambda desde cualquier origen
+resource "aws_lambda_permission" "url_permission" {
+  statement_id           = "AllowPublicInvoke"
+  action                 = "lambda:InvokeFunctionUrl"
+  function_name          = aws_lambda_function.api_lambda.function_name
+  principal              = "*"
+  function_url_auth_type = "NONE"
+}
