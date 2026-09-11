@@ -1,0 +1,51 @@
+name: Telemetry API - Infra Ops (Destroy / Import)
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Selecciona la operación de infraestructura a ejecutar'
+        required: true
+        default: 'import'
+        type: choice
+        options:
+          - import
+          - destroy
+
+jobs:
+  infrastructure-operation:
+    name: Run Terraform ${{ inputs.action }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./infrastructure
+
+      # Operación de Importación manual (Ideal para sincronizar recursos huérfanos)
+      - name: Execute Terraform Import
+        if: ${{ github.event.inputs.action == 'import' }}
+        run: |
+          echo "Intentando importar el repositorio ECR existente..."
+          terraform import aws_ecr_repository.api_repo telemetry-api || echo "El recurso ya estaba importado o no existe en AWS."
+        working-directory: ./infrastructure
+
+      # Operación de Destrucción total (Limpieza de la prueba)
+      - name: Execute Terraform Destroy
+        if: ${{ github.event.inputs.action == 'destroy' }}
+        run: |
+          echo "¡Atención! Destruyendo toda la infraestructura en AWS..."
+          terraform destroy -auto-approve
+        working-directory: ./infrastructure
